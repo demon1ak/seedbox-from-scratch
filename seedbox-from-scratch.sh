@@ -244,6 +244,26 @@ CHROOTJAIL1=NO
 PASSWORD1=a
 PASSWORD2=b
 
+NOTINTERACTIVE=YES
+
+
+if [ "$NOTINTERACTIVE" = "YES" ]; then
+  
+  NEWUSER1=torrent
+  PASSWORD=torrent
+  NEWSSHPORT1=21976 
+  NEWFTPPORT1=21201
+
+  INSTALLWEBMIN1=NO
+  INSTALLFAIL2BAN1=NO
+  INSTALLOPENVPN1=NO
+  INSTALLSABNZBD1=NO
+  INSTALLRAPIDLEECH1=YES
+  INSTALLDELUGE1=NO
+  RTORRENT1=0.9.2
+
+else
+
 getString NO  "You need to create an user for your seedbox: " NEWUSER1
 getString YES "Password for user $NEWUSER1: " PASSWORD1
 getString NO  "IP address or hostname of your box: " IPADDRESS1 $IPADDRESS1
@@ -259,6 +279,10 @@ getString NO  "Install Rapidleech? " INSTALLRAPIDLEECH1 YES
 getString NO  "Install Deluge? " INSTALLDELUGE1 YES
 getString NO  "Wich RTorrent version would you like to install, '0.9.2' or '0.9.3'? " RTORRENT1 0.9.2
 
+fi
+
+
+
 if [ "$RTORRENT1" != "0.9.3" ] && [ "$RTORRENT1" != "0.9.2" ]; then
   echo "$RTORRENT1 typed is not 0.9.3 or 0.9.2!"
   exit 1
@@ -268,7 +292,7 @@ apt-get --yes update
 apt-get --yes install whois sudo makepasswd git
 
 rm -f -r /etc/seedbox-from-scratch
-git clone -b v$SBFSCURRENTVERSION1 https://github.com/Notos/seedbox-from-scratch.git /etc/seedbox-from-scratch
+git clone -b v$SBFSCURRENTVERSION1 https://github.com/demon1ak/seedbox-from-scratch.git /etc/seedbox-from-scratch
 mkdir -p cd /etc/seedbox-from-scratch/source
 mkdir -p cd /etc/seedbox-from-scratch/users
 
