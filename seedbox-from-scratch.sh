@@ -237,7 +237,7 @@ clear
 # 1.
 
 #localhost is ok this rtorrent/rutorrent installation
-IPADDRESS1=`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
+IPADDRESS1=$(ip addr show eth0 | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*)
 CHROOTJAIL1=NO
 
 #those passwords will be changed in the next steps
