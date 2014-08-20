@@ -25,7 +25,6 @@
 #
 #
   SBFSCURRENTVERSION1=docker_version
-  OS1=$(lsb_release -si)
 #
 # Changelog
 #
@@ -386,10 +385,6 @@ apt-get --yes install php5-xcache
 
 #Check if its Debian an do a sysvinit by upstart replacement:
 
-if [ "$OS1" = "Debian" ]; then
-  echo 'Yes, do as I say!' | apt-get -y --force-yes install upstart
-fi
-
 # 8.3 Generate our lists of ports and RPC and create variables
 
 #permanently adding scripts to PATH to all users and root
@@ -410,39 +405,7 @@ do
   echo "RPC$i"  | tee -a /etc/seedbox-from-scratch/rpc.txt > /dev/null
 done
 
-# 8.4
 
-if [ "$INSTALLWEBMIN1" = "YES" ]; then
-  #if webmin isup, download key
-  WEBMINDOWN=YES
-  ping -c1 -w2 www.webmin.com > /dev/null
-  if [ $? = 0 ] ; then
-    wget -t 5 http://www.webmin.com/jcameron-key.asc
-    apt-key add jcameron-key.asc
-    if [ $? = 0 ] ; then
-      WEBMINDOWN=NO
-    fi
-  fi
-
-  if [ "$WEBMINDOWN"="NO" ] ; then
-    #add webmin source
-    echo "" | tee -a /etc/apt/sources.list > /dev/null
-    echo "deb http://download.webmin.com/download/repository sarge contrib" | tee -a /etc/apt/sources.list > /dev/null
-    cd /tmp
-  fi
-
-  if [ "$WEBMINDOWN" = "NO" ]; then
-    apt-get --yes update
-    apt-get --yes install webmin
-  fi
-fi
-
-if [ "$INSTALLFAIL2BAN1" = "YES" ]; then
-  apt-get --yes install fail2ban
-  cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.conf.original
-  cp /etc/seedbox-from-scratch/etc.fail2ban.jail.conf.template /etc/fail2ban/jail.conf
-  fail2ban-client reload
-fi
 
 # 9.
 a2enmod ssl
@@ -482,12 +445,6 @@ bash /etc/seedbox-from-scratch/createOpenSSLCACertificate
 mkdir -p /etc/ssl/private/
 openssl req -x509 -nodes -days 365 -newkey rsa:1024 -keyout /etc/ssl/private/vsftpd.pem -out /etc/ssl/private/vsftpd.pem -config /etc/seedbox-from-scratch/ssl/CA/caconfig.cnf
 
-if [ "$OS1" = "Debian" ]; then
-  apt-get --yes install vsftpd
-else
-  apt-get --yes install libcap-dev libpam0g-dev libwrap0-dev
-  dpkg -i /etc/seedbox-from-scratch/vsftpd_2.3.2-3ubuntu5.1_`uname -m`.deb
-fi
 
 perl -pi -e "s/anonymous_enable\=YES/\#anonymous_enable\=YES/g" /etc/vsftpd.conf
 perl -pi -e "s/connect_from_port_20\=YES/#connect_from_port_20\=YES/g" /etc/vsftpd.conf
@@ -560,175 +517,19 @@ echo "www-data ALL=(root) NOPASSWD: /usr/sbin/repquota" | tee -a /etc/sudoers > 
 
 cp /etc/seedbox-from-scratch/favicon.ico /var/www/
 
-# 26.
-cd /tmp
-wget http://downloads.sourceforge.net/mediainfo/MediaInfo_CLI_0.7.56_GNU_FromSource.tar.bz2
-tar jxvf MediaInfo_CLI_0.7.56_GNU_FromSource.tar.bz2
-cd MediaInfo_CLI_GNU_FromSource/
-sh CLI_Compile.sh
-cd MediaInfo/Project/GNU/CLI
-make install
-
-cd /var/www/rutorrent/plugins
-svn co https://autodl-irssi.svn.sourceforge.net/svnroot/autodl-irssi/trunk/rutorrent/autodl-irssi
-cd autodl-irssi
-
-# 30.
-
-cp /etc/jailkit/jk_init.ini /etc/jailkit/jk_init.ini.original
-echo "" | tee -a /etc/jailkit/jk_init.ini >> /dev/null
-bash /etc/seedbox-from-scratch/updatejkinit
-
-# 31.
-
-#clear
-#echo "ZNC Configuration"
-#echo ""
-#znc --makeconf
-#/home/antoniocarlos/.znc/configs/znc.conf
-
-# 32.
-
-# Installing poweroff button on ruTorrent
-
-cd /var/www/rutorrent/plugins/
-wget http://rutorrent-logoff.googlecode.com/files/logoff-1.0.tar.gz
-tar -zxf logoff-1.0.tar.gz
-rm -f logoff-1.0.tar.gz
-
-# Installing Filemanager and MediaStream
-
-rm -f -R /var/www/rutorrent/plugins/filemanager
-rm -f -R /var/www/rutorrent/plugins/fileupload
-rm -f -R /var/www/rutorrent/plugins/mediastream
-rm -f -R /var/www/stream
-
-cd /var/www/rutorrent/plugins/
-svn co http://svn.rutorrent.org/svn/filemanager/trunk/mediastream
-
-cd /var/www/rutorrent/plugins/
-svn co http://svn.rutorrent.org/svn/filemanager/trunk/filemanager
-
-cp /etc/seedbox-from-scratch/rutorrent.plugins.filemanager.conf.php.template /var/www/rutorrent/plugins/filemanager/conf.php
-
-mkdir -p /var/www/stream/
-ln -s /var/www/rutorrent/plugins/mediastream/view.php /var/www/stream/view.php
-chown www-data: /var/www/stream
-chown www-data: /var/www/stream/view.php
-
-echo "<?php \$streampath = 'http://$IPADDRESS1/stream/view.php'; ?>" | tee /var/www/rutorrent/plugins/mediastream/conf.php > /dev/null
-
-# 32.2 # FILEUPLOAD
-cd /var/www/rutorrent/plugins/
-svn co http://svn.rutorrent.org/svn/filemanager/trunk/fileupload
-chmod 775 /var/www/rutorrent/plugins/fileupload/scripts/upload
-wget -O /tmp/plowshare.deb http://plowshare.googlecode.com/files/plowshare_1~git20120930-1_all.deb
-dpkg -i /tmp/plowshare.deb
-apt-get --yes -f install
-
-# 32.2
-chown -R www-data:www-data /var/www/rutorrent
-chmod -R 755 /var/www/rutorrent
-
-#32.3
-
-perl -pi -e "s/\\\$topDirectory\, \\\$fm/\\\$homeDirectory\, \\\$topDirectory\, \\\$fm/g" /var/www/rutorrent/plugins/filemanager/flm.class.php
-perl -pi -e "s/\\\$this\-\>userdir \= addslash\(\\\$topDirectory\)\;/\\\$this\-\>userdir \= \\\$homeDirectory \? addslash\(\\\$homeDirectory\) \: addslash\(\\\$topDirectory\)\;/g" /var/www/rutorrent/plugins/filemanager/flm.class.php
-perl -pi -e "s/\\\$topDirectory/\\\$homeDirectory/g" /var/www/rutorrent/plugins/filemanager/settings.js.php
-
-#32.4
-unzip /etc/seedbox-from-scratch/rutorrent-oblivion.zip -d /var/www/rutorrent/plugins/
-echo "" | tee -a /var/www/rutorrent/css/style.css > /dev/null
-echo "/* for Oblivion */" | tee -a /var/www/rutorrent/css/style.css > /dev/null
-echo ".meter-value-start-color { background-color: #E05400 }" | tee -a /var/www/rutorrent/css/style.css > /dev/null
-echo ".meter-value-end-color { background-color: #8FBC00 }" | tee -a /var/www/rutorrent/css/style.css > /dev/null
-echo "::-webkit-scrollbar {width:12px;height:12px;padding:0px;margin:0px;}" | tee -a /var/www/rutorrent/css/style.css > /dev/null
-perl -pi -e "s/\$defaultTheme \= \"\"\;/\$defaultTheme \= \"Oblivion\"\;/g" /var/www/rutorrent/plugins/theme/conf.php
-
-ln -s /etc/seedbox-from-scratch/seedboxInfo.php.template /var/www/seedboxInfo.php
-
-# 32.5
-
-cd /var/www/rutorrent/plugins/
-rm -r /var/www/rutorrent/plugins/fileshare
-rm -r /var/www/share
-svn co http://svn.rutorrent.org/svn/filemanager/trunk/fileshare
-mkdir /var/www/share
-ln -s /var/www/rutorrent/plugins/fileshare/share.php /var/www/share/share.php
-ln -s /var/www/rutorrent/plugins/fileshare/share.php /var/www/share/index.php
-chown -R www-data:www-data /var/www/share
-cp /etc/seedbox-from-scratch/rutorrent.plugins.fileshare.conf.php.template /var/www/rutorrent/plugins/fileshare/conf.php
-perl -pi -e "s/<servername>/$IPADDRESS1/g" /var/www/rutorrent/plugins/fileshare/conf.php
-
-# 33.
 
 bash /etc/seedbox-from-scratch/updateExecutables
 
-#34.
+
 
 echo $SBFSCURRENTVERSION1 > /etc/seedbox-from-scratch/version.info
 echo $NEWFTPPORT1 > /etc/seedbox-from-scratch/ftp.info
 echo $NEWSSHPORT1 > /etc/seedbox-from-scratch/ssh.info
 echo $OPENVPNPORT1 > /etc/seedbox-from-scratch/openvpn.info
 
-# 36.
-
-wget -P /usr/share/ca-certificates/ --no-check-certificate https://certs.godaddy.com/repository/gd_intermediate.crt https://certs.godaddy.com/repository/gd_cross_intermediate.crt
-update-ca-certificates
-c_rehash
-
-# 96.
-
-if [ "$INSTALLOPENVPN1" = "YES" ]; then
-  bash /etc/seedbox-from-scratch/installOpenVPN
-fi
-
-if [ "$INSTALLSABNZBD1" = "YES" ]; then
-  bash /etc/seedbox-from-scratch/installSABnzbd
-fi
-
-if [ "$INSTALLRAPIDLEECH1" = "YES" ]; then
-  bash /etc/seedbox-from-scratch/installRapidleech
-fi
-
-if [ "$INSTALLDELUGE1" = "YES" ]; then
-  bash /etc/seedbox-from-scratch/installDeluge
-fi
-
-# 97.
-
 #first user will not be jailed
 #  createSeedboxUser <username> <password> <user jailed?> <ssh access?> <?>
 bash /etc/seedbox-from-scratch/createSeedboxUser $NEWUSER1 $PASSWORD1 YES YES YES
-
-# 98.
-
-set +x verbose
-
-clear
-
-echo ""
-echo "<<< The Seedbox From Scratch Script >>>"
-echo ""
-echo ""
-echo ""
-echo "Looks like everything is set."
-echo ""
-echo "Remember that your SSH port is now ======> $NEWSSHPORT1"
-echo ""
-echo "System will reboot now, but don't close this window until you take note of the port number: $NEWSSHPORT1"
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-
-exit
-
-# 99.
-
 
 
 ##################### LAST LINE ###########
