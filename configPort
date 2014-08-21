@@ -1,3 +1,5 @@
+#!/bin/bash
+
 rm -f /etc/seedbox-from-scratch/ports.txt
 for i in $(seq 51101 51999)
 do
